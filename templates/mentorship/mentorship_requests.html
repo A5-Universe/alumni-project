@@ -52,7 +52,7 @@
                                     </a>
                                 </div>
                             {% elif request.status == 'completed' %}
-                                {% if not request.feedbacks.filter(reviewer=user).exists %}
+                                {% if not request.has_feedback %}
                                     <a href="{% url 'provide_feedback' request.id %}" class="btn btn-sm btn-primary">
                                         <i class="fas fa-star"></i> Provide Feedback
                                     </a>
