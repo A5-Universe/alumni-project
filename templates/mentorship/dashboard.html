@@ -51,6 +51,12 @@
                     <i class="fas fa-check"></i> Mark Complete
                   </a>
                 {% endif %}
+                <a href="{% url 'review_session' 'mentorship' session.id %}" class="btn btn-sm btn-outline-warning">
+                  <i class="fas fa-star"></i> Review
+              </a>
+              <a href="{% url 'view_session_reviews' 'mentorship' session.id %}" class="btn btn-sm btn-outline-info">
+                  <i class="fas fa-eye"></i> View Reviews
+              </a>
               </div>
             </div>
           </div>
@@ -106,6 +112,13 @@
                   </a>
                 {% endif %}
               {% endif %}
+              <a href="{% url 'review_session' 'group' session.id %}" class="btn btn-sm btn-outline-warning">
+                <i class="fas fa-star"></i> Review
+            </a>
+            <a href="{% url 'view_session_reviews' 'group' session.id %}" class="btn btn-sm btn-outline-info">
+                <i class="fas fa-eye"></i> View Reviews
+            </a>
+        </div>
             </div>
           </div>
           {% endfor %}
@@ -166,7 +179,7 @@
       </div>
       <div class="card-body">
         <div class="list-group">
-          {% for topic in recent_topics|slice:":5" %}
+          {% for topic in recent_topics %}
           <a href="{% url 'topic_detail' topic.id %}" class="list-group-item list-group-item-action">
             <div class="d-flex w-100 justify-content-between">
               <h6 class="mb-1">{{ topic.title }}</h6>

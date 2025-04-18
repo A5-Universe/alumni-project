@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Session Reviews - Alumni Mentorship{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    {% if session_type == 'mentorship' %}
+        <a href="{% url 'mentorship_requests' %}" class="btn btn-outline-secondary mb-3">
+            <i class="fas fa-arrow-left me-2"></i> Back to Mentorship Requests
+        </a>
+    {% else %}
+        <a href="{% url 'group_sessions' %}" class="btn btn-outline-secondary mb-3">
+            <i class="fas fa-arrow-left me-2"></i> Back to Group Sessions
+        </a>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="card-title mb-0">Reviews for {{ session.title }}</h4>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h5>Session Details</h5>
+                {% if session_type == 'mentorship' %}
+                    <p><strong>Mentor:</strong> {{ session.mentor.get_full_name }}</p>
+                    <p><strong>Mentee:</strong> {{ session.mentee.get_full_name }}</p>
+                    <p><strong>Status:</strong> <span class="badge {% if session.status == 'completed' %}bg-success{% else %}bg-primary{% endif %}">{{ session.get_status_display }}</span></p>
+                {% else %}
+                    <p><strong>Host:</strong> {{ session.mentor.get_full_name }}</p>
+                    <p><strong>Date:</strong> {{ session.date_time|date:"F j, Y, g:i a" }}</p>
+                    <p><strong>Participants:</strong> {{ session.participants.count }} / {{ session.max_participants }}</p>
+                {% endif %}
+                
+                <div class="text-end">
+                    <a href="{% url 'review_session' session_type session.id %}" class="btn btn-primary">
+                        <i class="fas fa-star me-2"></i> Add Your Review
+                    </a>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <h5 class="mb-3">Reviews ({{ reviews.count }})</h5>
+            
+            {% if reviews %}
+                <div class="row">
+                    {% for review in reviews %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="d-flex align-items-center">
+                                            {% if review.reviewer.profile_picture %}
+                                                <img src="{{ review.reviewer.profile_picture.url }}" alt="{{ review.reviewer.get_full_name }}" class="profile-pic me-2" style="width: 40px; height: 40px;">
+                                            {% else %}
+                                                <i class="fas fa-user-circle me-2" style="font-size: 2rem; color: #ccc;"></i>
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-0">{{ review.reviewer.get_full_name }}</h6>
+                                                <small class="text-muted">{{ review.reviewer.get_user_type_display }}</small>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-primary">{{ review.get_rating_display }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <p class="card-text">{{ review.content }}</p>
+                                    <small class="text-muted">{{ review.created_at|date:"F j, Y" }}</small>
+                                    
+                                    {% if review.reviewer == user %}
+                                        <div class="mt-2 text-end">
+                                            <a href="{% url 'review_session' session_type session.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No reviews yet. Be the first to review this session!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

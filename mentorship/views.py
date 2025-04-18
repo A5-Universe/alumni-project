@@ -3,13 +3,16 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.utils import timezone
-from .models import MentorshipSession, GroupSession, Feedback
-from .forms import MentorshipSessionRequestForm, GroupSessionForm, FeedbackForm
+from .models import MentorshipSession, GroupSession, Feedback, SessionReview
+from .forms import MentorshipSessionRequestForm, GroupSessionForm, FeedbackForm, SessionReviewForm
 from users.models import CustomUser
+from discussion.models import Topic
 
 def home_view(request):
     if request.user.is_authenticated:
-        upcoming_sessions = []
+        # Get recent topics for the dashboard
+        recent_topics = Topic.objects.all().order_by('-created_at')[:5]
+
         if request.user.user_type == 'student':
             mentorship_sessions = MentorshipSession.objects.filter(mentee=request.user, status='accepted')
             group_sessions = request.user.group_sessions.all()
@@ -20,6 +23,8 @@ def home_view(request):
         context = {
             'mentorship_sessions': mentorship_sessions,
             'group_sessions': group_sessions,
+            'recent_topics': recent_topics,
+
         }
         return render(request, 'mentorship/dashboard.html', context)
     else:
@@ -170,3 +175,80 @@ def provide_feedback(request, session_id):
         'session': session,
         'recipient': recipient
     })
+
+@login_required
+def review_session(request, session_type, session_id):
+    """Add a review for either a mentorship session or a group session"""
+    if session_type == 'mentorship':
+        session = get_object_or_404(MentorshipSession, id=session_id)
+        # Check if user is part of the session
+        if request.user != session.mentor and request.user != session.mentee:
+            return HttpResponseForbidden()
+    else:  # group session
+        session = get_object_or_404(GroupSession, id=session_id)
+        # Check if user is mentor or participant
+        if request.user != session.mentor and request.user not in session.participants.all():
+            return HttpResponseForbidden()
+    
+    # Check if user already reviewed this session
+    existing_review = None
+    if session_type == 'mentorship':
+        existing_review = SessionReview.objects.filter(
+            mentorship_session=session, 
+            reviewer=request.user
+        ).first()
+    else:
+        existing_review = SessionReview.objects.filter(
+            group_session=session, 
+            reviewer=request.user
+        ).first()
+    
+    if request.method == 'POST':
+        if existing_review:
+            form = SessionReviewForm(request.POST, instance=existing_review)
+        else:
+            form = SessionReviewForm(request.POST)
+        
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.reviewer = request.user
+            
+            if session_type == 'mentorship':
+                review.mentorship_session = session
+            else:
+                review.group_session = session
+                
+            review.save()
+            messages.success(request, 'Your review has been submitted!')
+            
+            if session_type == 'mentorship':
+                return redirect('mentorship_requests')
+            else:
+                return redirect('group_sessions')
+    else:
+        form = SessionReviewForm(instance=existing_review) if existing_review else SessionReviewForm()
+    
+    context = {
+        'form': form,
+        'session': session,
+        'session_type': session_type,
+        'is_edit': existing_review is not None
+    }
+    return render(request, 'mentorship/review_session.html', context)
+
+@login_required
+def view_session_reviews(request, session_type, session_id):
+    """View all reviews for a session"""
+    if session_type == 'mentorship':
+        session = get_object_or_404(MentorshipSession, id=session_id)
+        reviews = SessionReview.objects.filter(mentorship_session=session)
+    else:  # group session
+        session = get_object_or_404(GroupSession, id=session_id)
+        reviews = SessionReview.objects.filter(group_session=session)
+    
+    context = {
+        'session': session,
+        'session_type': session_type,
+        'reviews': reviews
+    }
+    return render(request, 'mentorship/session_reviews.html', context)

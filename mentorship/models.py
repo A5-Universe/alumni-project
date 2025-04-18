@@ -1,5 +1,7 @@
 from django.db import models
 from users.models import CustomUser
+from django.utils import timezone
+
 
 class MentorshipSession(models.Model):
     STATUS_CHOICES = (
@@ -54,3 +56,39 @@ class Feedback(models.Model):
     
     def __str__(self):
         return f"Feedback from {self.reviewer.username} to {self.recipient.username}"
+    
+
+class SessionReview(models.Model):
+    RATING_CHOICES = (
+        (1, '1 - Poor'),
+        (2, '2 - Fair'),
+        (3, '3 - Good'),
+        (4, '4 - Very Good'),
+        (5, '5 - Excellent'),
+    )
+    
+    # Can be linked to either a mentorship session or a group session
+    mentorship_session = models.ForeignKey(MentorshipSession, on_delete=models.CASCADE, 
+                                          related_name='reviews', null=True, blank=True)
+    group_session = models.ForeignKey(GroupSession, on_delete=models.CASCADE, 
+                                     related_name='reviews', null=True, blank=True)
+    
+    reviewer = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='session_reviews')
+    rating = models.IntegerField(choices=RATING_CHOICES)
+    content = models.TextField()
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(mentorship_session__isnull=False) | models.Q(group_session__isnull=False),
+                name='review_has_session'
+            )
+        ]
+    
+    def __str__(self):
+        if self.mentorship_session:
+            return f"Review for mentorship session {self.mentorship_session.id} by {self.reviewer.username}"
+        else:
+            return f"Review for group session {self.group_session.id} by {self.reviewer.username}"
+
