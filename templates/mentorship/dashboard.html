@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard - Alumni Mentorship{% endblock %}
 {% block content %}
-<h1 class="mb-4">Welcome, {{ user.first_name }}!</h1>
+<h1 class="mb-4 text-white">Welcome, {{ user.first_name }}!</h1>
 
 <div class="row">
   <div class="col-md-8">
@@ -133,27 +133,27 @@
       <div class="card-body">
         <div class="d-grid gap-2">
           {% if user.user_type == 'student' %}
-          <a href="{% url 'alumni_list' %}" class="btn btn-outline-primary">
+          <a href="{% url 'alumni_list' %}" class="btn btn-outline-secondary">
             <i class="fas fa-search"></i> Find a Mentor
           </a>
-          <a href="{% url 'group_sessions' %}" class="btn btn-outline-primary">
+          <a href="{% url 'group_sessions' %}" class="btn btn-outline-secondary">
             <i class="fas fa-users"></i> Browse Group Sessions
           </a>
           {% else %}
-          <a href="{% url 'create_group_session' %}" class="btn btn-outline-primary">
+          <a href="{% url 'create_group_session' %}" class="btn btn-outline-secondary">
             <i class="fas fa-plus"></i> Create Group Session
           </a>
-          <a href="{% url 'student_list' %}" class="btn btn-outline-primary">
+          <a href="{% url 'student_list' %}" class="btn btn-outline-secondary">
             <i class="fas fa-search"></i> Browse Students
           </a>
           {% endif %}
-          <a href="{% url 'create_topic' %}" class="btn btn-outline-primary">
+          <a href="{% url 'create_topic' %}" class="btn btn-outline-secondary">
             <i class="fas fa-clipboard-list"></i> Start Discussion
           </a>
-          <a href="{% url 'chat_list' %}" class="btn btn-outline-primary">
+          <a href="{% url 'chat_list' %}" class="btn btn-outline-secondary">
             <i class="fas fa-comments"></i> Messages
           </a>
-          <a href="{% url 'call_home' %}" class="btn btn-outline-primary">
+          <a href="{% url 'call_home' %}" class="btn btn-outline-secondary">
             <i class="fas fa-video"></i> Calls
           </a>
         </div>
