@@ -2,11 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponseForbidden
+from django.utils import timezone
 from .models import MentorshipSession, GroupSession, Feedback
 from .forms import MentorshipSessionRequestForm, GroupSessionForm, FeedbackForm
 from users.models import CustomUser
-from django.utils import timezone
-    
 
 def home_view(request):
     if request.user.is_authenticated:
@@ -50,14 +49,26 @@ def request_mentorship(request, mentor_id):
 
 @login_required
 def mentorship_requests(request):
-    if request.user.user_type == 'alumni':
-        pending_requests = MentorshipSession.objects.filter(mentor=request.user, status='pending')
-        context = {'requests': pending_requests, 'is_mentor': True}
+    user = request.user
+
+    if user.user_type == 'alumni':
+        pending_requests = MentorshipSession.objects.filter(mentor=user, status='pending')
+        is_mentor = True
     else:
-        sent_requests = MentorshipSession.objects.filter(mentee=request.user)
-        context = {'requests': sent_requests, 'is_mentor': False}
-        
+        pending_requests = MentorshipSession.objects.filter(mentee=user)
+        is_mentor = False
+
+    for session in pending_requests:
+        session.has_feedback = session.feedbacks.filter(reviewer=user).exists()
+
+    context = {
+        'requests': pending_requests,
+        'is_mentor': is_mentor,
+        'user': user,
+    }
+
     return render(request, 'mentorship/mentorship_requests.html', context)
+
 
 @login_required
 def mentorship_action(request, session_id, action):
