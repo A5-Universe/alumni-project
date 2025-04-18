@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Find Mentors - Alumni Mentorship{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Find Mentors</h1>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <form method="get" class="d-flex">
+            <input type="text" name="search" class="form-control me-2" placeholder="Search by name, company, or industry" value="{{ request.GET.search }}">
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <div class="d-flex justify-content-end">
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown">
+                    Filter by Industry
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+                    <li><a class="dropdown-item" href="{% url 'alumni_list' %}">All Industries</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% for industry in industries %}
+                        <li><a class="dropdown-item" href="{% url 'alumni_list' %}?industry={{ industry }}">{{ industry }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% for alum in alumni %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    {% if alum.profile_picture %}
+                        <img src="{{ alum.profile_picture.url }}" alt="{{ alum.get_full_name }}" class="profile-pic-lg mb-3">
+                    {% else %}
+                        <i class="fas fa-user-circle mb-3" style="font-size: 5rem; color: #ccc;"></i>
+                    {% endif %}
+                    <h5 class="card-title">{{ alum.get_full_name }}</h5>
+                    <p class="card-text text-muted">{{ alum.position }} at {{ alum.company }}</p>
+                    <p class="card-text"><span class="badge bg-secondary">{{ alum.industry }}</span></p>
+                    <p class="card-text small">{{ alum.bio|truncatechars:100 }}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'user_detail' alum.username %}" class="btn btn-outline-primary">View Profile</a>
+                        <a href="{% url 'request_mentorship' alum.id %}" class="btn btn-primary">Request Mentorship</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No alumni found matching your criteria. Try adjusting your search or filters.
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

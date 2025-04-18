@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ profile_user.get_full_name }} - Alumni Mentorship{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                {% if profile_user.profile_picture %}
+                    <img src="{{ profile_user.profile_picture.url }}" alt="Profile Picture" class="profile-pic-lg mb-3">
+                {% else %}
+                    <i class="fas fa-user-circle mb-3" style="font-size: 8rem; color: #ccc;"></i>
+                {% endif %}
+                <h4>{{ profile_user.get_full_name }}</h4>
+                <p class="text-muted">@{{ profile_user.username }}</p>
+                <p class="badge bg-primary">{{ profile_user.get_user_type_display }}</p>
+                {% if profile_user.user_type == 'alumni' %}
+                    <p><i class="fas fa-building me-2"></i> {{ profile_user.company|default:"Not specified" }}</p>
+                    <p><i class="fas fa-briefcase me-2"></i> {{ profile_user.position|default:"Not specified" }}</p>
+                    <p><i class="fas fa-industry me-2"></i> {{ profile_user.industry|default:"Not specified" }}</p>
+                {% else %}
+                    <p><i class="fas fa-graduation-cap me-2"></i> {{ profile_user.course|default:"Not specified" }}</p>
+                    <p><i class="fas fa-user-graduate me-2"></i> Year {{ profile_user.year_of_study|default:"Not specified" }}</p>
+                {% endif %}
+                <p><i class="fas fa-calendar me-2"></i> Graduation: {{ profile_user.graduation_year|default:"Not specified" }}</p>
+                
+                <div class="d-grid gap-2 mt-3">
+                    {% if user.is_authenticated and user != profile_user %}
+                        {% if user.user_type == 'student' and profile_user.user_type == 'alumni' %}
+                            <a href="{% url 'request_mentorship' profile_user.id %}" class="btn btn-primary">
+                                <i class="fas fa-user-plus"></i> Request Mentorship
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'create_chat' profile_user.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-comments"></i> Send Message
+                        </a>
+                        <a href="{% url 'schedule_call' profile_user.id %}" class="btn btn-outline-success">
+                            <i class="fas fa-video"></i> Schedule Call
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">Bio</h4>
+            </div>
+            <div class="card-body">
+                {% if profile_user.bio %}
+                    <p>{{ profile_user.bio }}</p>
+                {% else %}
+                    <p class="text-muted">No bio provided.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if profile_user.user_type == 'alumni' %}
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">Upcoming Group Sessions</h4>
+                </div>
+                <div class="card-body">
+                    {% for session in profile_user.hosted_group_sessions.all %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ session.title }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ session.date_time|date:"F j, Y, g:i a" }}</h6>
+                                <p class="card-text">{{ session.description }}</p>
+                                <p class="card-text"><small class="text-muted">{{ session.participants.count }} / {{ session.max_participants }} participants</small></p>
+                                {% if user.is_authenticated and user.user_type == 'student' %}
+                                    {% if user in session.participants.all %}
+                                        <a href="{% url 'leave_group_session' session.id %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-sign-out-alt"></i> Leave Session
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'join_group_session' session.id %}" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-sign-in-alt"></i> Join Session
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">No upcoming group sessions.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        
+        <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">Recent Activity</h4>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for post in profile_user.posts.all|slice:":5" %}
+                        <li class="list-group-item">
+                            <i class="fas fa-comment-alt text-primary me-2"></i>
+                            Posted in <a href="{% url 'topic_detail' post.topic.id %}">{{ post.topic.title }}</a>
+                            <small class="text-muted">{{ post.created_at|timesince }} ago</small>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">No recent activity.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

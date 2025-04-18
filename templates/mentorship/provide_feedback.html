@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Provide Feedback - Alumni Mentorship{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">Provide Feedback for {{ recipient.get_full_name }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle me-2"></i> Your feedback helps improve the mentorship experience. Please be honest and constructive.
+                </div>
+                
+                <div class="mb-4">
+                    <h5>Mentorship Session Details</h5>
+                    <p><strong>Title:</strong> {{ session.title }}</p>
+                    <p><strong>Started:</strong> {{ session.created_at|date }}</p>
+                    <p><strong>Completed:</strong> {{ session.updated_at|date }}</p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                        <a href="{% url 'mentorship_requests' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Request Mentorship - Alumni Mentorship{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">Request Mentorship from {{ mentor.get_full_name }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3 text-center">
+                        {% if mentor.profile_picture %}
+                            <img src="{{ mentor.profile_picture.url }}" alt="{{ mentor.get_full_name }}" class="profile-pic-lg mb-2">
+                        {% else %}
+                            <i class="fas fa-user-circle mb-2" style="font-size: 5rem; color: #ccc;"></i>
+                        {% endif %}
+                        <h5>{{ mentor.get_full_name }}</h5>
+                        <p class="text-muted">{{ mentor.position }} at {{ mentor.company }}</p>
+                    </div>
+                    <div class="col-md-9">
+                        <h5>About {{ mentor.first_name }}</h5>
+                        <p>{{ mentor.bio }}</p>
+                        <p><strong>Industry:</strong> {{ mentor.industry }}</p>
+                        <p><strong>Graduation Year:</strong> {{ mentor.graduation_year }}</p>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Your request will be sent to {{ mentor.first_name }} for approval. You'll be notified when they respond.
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Send Request</button>
+                        <a href="{% url 'user_detail' mentor.username %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

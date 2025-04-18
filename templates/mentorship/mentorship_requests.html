@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Mentorship Requests - Alumni Mentorship{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">
+    {% if is_mentor %}
+        Mentorship Requests
+    {% else %}
+        Your Mentorship Requests
+    {% endif %}
+</h1>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">
+            {% if is_mentor %}
+                Pending Requests
+            {% else %}
+                Your Requests
+            {% endif %}
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if requests %}
+            <div class="list-group">
+                {% for request in requests %}
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ request.title }}</h5>
+                            <small class="text-muted">{{ request.created_at|date }}</small>
+                        </div>
+                        <p class="mb-1">{{ request.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small>
+                                {% if is_mentor %}
+                                    From: <a href="{% url 'user_detail' request.mentee.username %}">{{ request.mentee.get_full_name }}</a>
+                                {% else %}
+                                    To: <a href="{% url 'user_detail' request.mentor.username %}">{{ request.mentor.get_full_name }}</a>
+                                    <span class="badge {% if request.status == 'pending' %}bg-warning{% elif request.status == 'accepted' %}bg-success{% elif request.status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                        {{ request.get_status_display }}
+                                    </span>
+                                {% endif %}
+                            </small>
+                            {% if is_mentor and request.status == 'pending' %}
+                                <div>
+                                    <a href="{% url 'mentorship_action' request.id 'accept' %}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-check"></i> Accept
+                                    </a>
+                                    <a href="{% url 'mentorship_action' request.id 'reject' %}" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times"></i> Reject
+                                    </a>
+                                </div>
+                            {% elif request.status == 'completed' %}
+                                {% if not request.feedbacks.filter(reviewer=user).exists %}
+                                    <a href="{% url 'provide_feedback' request.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-star"></i> Provide Feedback
+                                    </a>
+                                {% else %}
+                                    <span class="badge bg-success">Feedback Provided</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted">
+                {% if is_mentor %}
+                    You don't have any pending mentorship requests.
+                {% else %}
+                    You haven't sent any mentorship requests yet. <a href="{% url 'alumni_list' %}">Find a mentor</a> to get started!
+                {% endif %}
+            </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

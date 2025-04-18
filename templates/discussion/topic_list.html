@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Discussion Board - Alumni Mentorship{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Discussion Board</h1>
+    <a href="{% url 'create_topic' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i> New Topic
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Topics</h5>
+    </div>
+    <div class="card-body">
+        {% if topics %}
+            <div class="list-group">
+                {% for topic in topics %}
+                    <a href="{% url 'topic_detail' topic.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ topic.title }}</h5>
+                            <small class="text-muted">{{ topic.created_at|date }}</small>
+                        </div>
+                        <p class="mb-1">{{ topic.description|truncatechars:150 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small>
+                                <i class="fas fa-user me-1"></i> {{ topic.created_by.get_full_name }}
+                                <span class="badge bg-secondary ms-2">{{ topic.created_by.get_user_type_display }}</span>
+                            </small>
+                            <small>
+                                <i class="fas fa-comments me-1"></i> {{ topic.posts.count }} posts
+                            </small>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i> No topics have been created yet. 
+                <a href="{% url 'create_topic' %}" class="alert-link">Create the first topic</a> to start a discussion!
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

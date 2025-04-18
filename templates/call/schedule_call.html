@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Schedule Call - Alumni Mentorship{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">Schedule a Call with {{ other_user.get_full_name }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3 text-center">
+                        {% if other_user.profile_picture %}
+                            <img src="{{ other_user.profile_picture.url }}" alt="{{ other_user.get_full_name }}" class="profile-pic-lg mb-2">
+                        {% else %}
+                            <i class="fas fa-user-circle mb-2" style="font-size: 5rem; color: #ccc;"></i>
+                        {% endif %}
+                        <h5>{{ other_user.get_full_name }}</h5>
+                        <p class="badge bg-primary">{{ other_user.get_user_type_display }}</p>
+                    </div>
+                    <div class="col-md-9">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="scheduled_time" class="form-label">Select Date and Time</label>
+                                <input type="datetime-local" class="form-control" id="scheduled_time" name="scheduled_time" required>
+                                <div class="form-text">Choose a time that works for both of you.</div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> Once scheduled, you'll be able to join the call at the specified time.
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Schedule Call</button>
+                                <a href="{% url 'user_detail' other_user.username %}" class="btn btn-outline-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

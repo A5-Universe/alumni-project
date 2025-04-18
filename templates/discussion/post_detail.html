@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Post Detail - Alumni Mentorship{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'topic_detail' post.topic.id %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left me-2"></i> Back to Topic
+    </a>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="card-title mb-0">{{ post.topic.title }}</h4>
+        </div>
+        <div class="card-body">
+            <div class="card mb-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <div class="d-flex align-items-center">
+                            {% if post.author.profile_picture %}
+                                <img src="{{ post.author.profile_picture.url }}" alt="{{ post.author.get_full_name }}" class="profile-pic me-2">
+                            {% else %}
+                                <i class="fas fa-user-circle me-2" style="font-size: 2rem; color: #ccc;"></i>
+                            {% endif %}
+                            <div>
+                                <a href="{% url 'user_detail' post.author.username %}">{{ post.author.get_full_name }}</a>
+                                <span class="badge bg-secondary ms-2">{{ post.author.get_user_type_display }}</span>
+                                <br>
+                                <small class="text-muted">{{ post.created_at|date:"F j, Y, g:i a" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <p>{{ post.content }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Comments ({{ comments.count }})</h5>
+    </div>
+    <div class="card-body">
+        {% if comments %}
+            {% for comment in comments %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            {% if comment.author.profile_picture %}
+                                <img src="{{ comment.author.profile_picture.url }}" alt="{{ comment.author.get_full_name }}" class="profile-pic me-2" style="width: 30px; height: 30px;">
+                            {% else %}
+                                <i class="fas fa-user-circle me-2" style="font-size: 1.5rem; color: #ccc;"></i>
+                            {% endif %}
+                            <div>
+                                <a href="{% url 'user_detail' comment.author.username %}">{{ comment.author.get_full_name }}</a>
+                                <span class="badge bg-secondary ms-2">{{ comment.author.get_user_type_display }}</span>
+                                <br>
+                                <small class="text-muted">{{ comment.created_at|date:"F j, Y, g:i a" }}</small>
+                            </div>
+                        </div>
+                        <p class="mb-0">{{ comment.content }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">No comments yet. Be the first to comment!</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Add a Comment</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Comment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

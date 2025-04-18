@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Video Call - Alumni Mentorship{% endblock %}
+
+{% block extra_js %}
+<script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.11.0.js"></script>
+<script>
+    const APP_ID = '{{ app_id }}';
+    const TOKEN = '{{ token }}';
+    const CHANNEL = '{{ channel_name }}';
+    const UID = {{ uid }};
+    
+    let localTracks = [];
+    let remoteUsers = {};
+    
+    let client;
+    
+    // Initialize Agora client
+    async function initializeCall() {
+        client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+        await client.join(APP_ID, CHANNEL, TOKEN, UID);
+        
+        // Event listeners for remote users
+        client.on('user-published', handleUserPublished);
+        client.on('user-left', handleUserLeft);
+        
+        // Create and publish local tracks
+        const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+        localTracks.push(audioTrack, videoTrack);
+        
+        // Display local video
+        const localPlayer = document.getElementById('local-player');
+        localPlayer.innerHTML = '';
+        localPlayer.appendChild(videoTrack.play());
+        
+        // Publish local tracks
+        await client.publish(localTracks);
+    }
+    
+    // Handle remote user publishing audio/video
+    async function handleUserPublished(user, mediaType) {
+        await client.subscribe(user, mediaType);
+        
+        if (mediaType === 'video') {
+            const remotePlayer = document.getElementById('remote-player');
+            remotePlayer.innerHTML = '';
+            remotePlayer.appendChild(user.videoTrack.play());
+        }
+        
+        if (mediaType === 'audio') {
+            user.audioTrack.play();
+        }
+        
+        remoteUsers[user.uid] = user;
+    }
+    
+    // Handle remote user leaving
+    function handleUserLeft(user) {
+        delete remoteUsers[user.uid];
+        const remotePlayer = document.getElementById('remote-player');
+        remotePlayer.innerHTML = '<div class="text-center text-white"><i class="fas fa-user" style="font-size: 4rem;"></i><p>Waiting for other participant...</p></div>';
+    }
+    
+    // Toggle audio
+    function toggleAudio() {
+        if (localTracks[0].muted) {
+            localTracks[0].setMuted(false);
+            document.getElementById('audio-btn').innerHTML = '<i class="fas fa-microphone"></i>';
+        } else {
+            localTracks[0].setMuted(true);
+            document.getElementById('audio-btn').innerHTML = '<i class="fas fa-microphone-slash"></i>';
+        }
+    }
+    
+    // Toggle video
+    function toggleVideo() {
+        if (localTracks[1].muted) {
+            localTracks[1].setMuted(false);
+            document.getElementById('video-btn').innerHTML = '<i class="fas fa-video"></i>';
+        } else {
+            localTracks[1].setMuted(true);
+            document.getElementById('video-btn').innerHTML = '<i class="fas fa-video-slash"></i>';
+        }
+    }
+    
+    // End call
+    async function endCall() {
+        for (let track of localTracks) {
+            track.stop();
+            track.close();
+        }
+        
+        await client.leave();
+        
+        // Send end call request to server
+        fetch('/call/end/{{ call.id }}/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            window.location.href = "{% url 'call_home' %}";
+        })
+        .catch(error => {
+            console.error('Error ending call:', error);
+            window.location.href = "{% url 'call_home' %}";
+        });
+    }
+    
+    // Initialize call when page loads
+    window.addEventListener('load', initializeCall);
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">
+                    Video Call with 
+                    {% if call.initiator == user %}
+                        {{ call.receiver.get_full_name }}
+                    {% else %}
+                        {{ call.initiator.get_full_name }}
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <div class="col-md-9">
+                        <div id="remote-player" class="video-container">
+                            <div class="text-center text-white">
+                                <i class="fas fa-user" style="font-size: 4rem;"></i>
+                                <p>Waiting for other participant...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div id="local-player" class="video-container" style="height: 200px;"></div>
+                        <div class="p-3">
+                            <h5>Call Controls</h5>
+                            <div class="d-flex justify-content-center mt-3">
+                                <div id="audio-btn" class="control-btn me-3" onclick="toggleAudio()">
+                                    <i class="fas fa-microphone"></i>
+                                </div>
+                                <div id="video-btn" class="control-btn me-3" onclick="toggleVideo()">
+                                    <i class="fas fa-video"></i>
+                                </div>
+                                <div class="control-btn end-call" onclick="endCall()">
+                                    <i class="fas fa-phone-slash"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

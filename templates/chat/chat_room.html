@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat - Alumni Mentorship{% endblock %}
+
+{% block extra_js %}
+<script>
+    const roomId = {{ room.id }};
+    const userId = {{ user.id }};
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/chat/' + roomId + '/'
+    );
+    
+    const chatContainer = document.getElementById('chat-container');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    
+    // Scroll to bottom of chat
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    // Add message to chat
+    function addMessage(message, senderId, senderUsername) {
+        const isCurrentUser = senderId == userId;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isCurrentUser ? 'message-sent' : 'message-received'}`;
+        
+        const messageContent = document.createElement('div');
+        messageContent.textContent = message;
+        
+        const messageInfo = document.createElement('div');
+        messageInfo.className = 'message-info';
+        messageInfo.textContent = isCurrentUser ? 'You' : senderUsername;
+        
+        messageDiv.appendChild(messageContent);
+        messageDiv.appendChild(messageInfo);
+        chatContainer.appendChild(messageDiv);
+        
+        scrollToBottom();
+    }
+    
+    // WebSocket event handlers
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        addMessage(data.message, data.sender_id, data.sender_username);
+    };
+    
+    chatSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+    
+    // Send message
+    function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message) {
+            chatSocket.send(JSON.stringify({
+                'message': message,
+                'sender_id': userId
+            }));
+            messageInput.value = '';
+        }
+    }
+    
+    // Event listeners
+    sendButton.addEventListener('click', sendMessage);
+    
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+    
+    // Scroll to bottom on load
+    window.addEventListener('load', scrollToBottom);
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        {% if room.is_group_chat %}
+                            <i class="fas fa-users me-2"></i> {{ room.name }}
+                        {% else %}
+                            {% for participant in other_participants %}
+                                {% if participant.profile_picture %}
+                                    <img src="{{ participant.profile_picture.url }}" alt="{{ participant.get_full_name }}" class="profile-pic me-2" style="width: 30px; height: 30px;">
+                                {% else %}
+                                    <i class="fas fa-user-circle me-2"></i>
+                                {% endif %}
+                                {{ participant.get_full_name }}
+                            {% endfor %}
+                        {% endif %}
+                    </h5>
+                    <a href="{% url 'chat_list' %}" class="btn btn-sm btn-light">
+                        <i class="fas fa-arrow-left me-1"></i> Back
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="chat-container" class="chat-container">
+                    {% for message in messages %}
+                        <div class="message {% if message.sender == user %}message-sent{% else %}message-received{% endif %}">
+                            <div>{{ message.content }}</div>
+                            <div class="message-info">
+                                {% if message.sender == user %}
+                                    You
+                                {% else %}
+                                    {{ message.sender.first_name }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center text-muted my-4">
+                            <i class="fas fa-comments mb-2" style="font-size: 2rem;"></i>
+                            <p>No messages yet. Start the conversation!</p>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="input-group mt-3">
+                    <input type="text" id="message-input" class="form-control" placeholder="Type your message...">
+                    <button id="send-button" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

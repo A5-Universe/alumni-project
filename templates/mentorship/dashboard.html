@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - Alumni Mentorship{% endblock %}
+{% block content %}
+<h1 class="mb-4">Welcome, {{ user.first_name }}!</h1>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">
+          {% if user.user_type == 'student' %} Your Mentorship Sessions {% else %} Your Mentees {% endif %}
+        </h5>
+      </div>
+      <div class="card-body">
+        {% if mentorship_sessions %}
+        <div class="list-group">
+          {% for session in mentorship_sessions %}
+          <div class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+              <h5 class="mb-1">{{ session.title }}</h5>
+              <small class="text-muted">Started {{ session.created_at|date }}</small>
+            </div>
+            <p class="mb-1">{{ session.description|truncatechars:100 }}</p>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+              <small>
+                {% if user.user_type == 'student' and session.mentor %}
+                  Mentor:
+                  <a href="{% url 'user_detail' session.mentor.username %}">
+                    {{ session.mentor.get_full_name }}
+                  </a>
+                {% elif session.mentee %}
+                  Mentee:
+                  <a href="{% url 'user_detail' session.mentee.username %}">
+                    {{ session.mentee.get_full_name }}
+                  </a>
+                {% endif %}
+              </small>
+              <div>
+                {% if user.user_type == 'student' and session.mentor %}
+                  <a href="{% url 'create_chat' user_id=session.mentor.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-comments"></i> Chat
+                  </a>
+                  <a href="{% url 'schedule_call' user_id=session.mentor.id %}" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-video"></i> Schedule Call
+                  </a>
+                {% elif session.mentee %}
+                  <a href="{% url 'schedule_call' user_id=session.mentee.id %}" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-video"></i> Schedule Call
+                  </a>
+                  <a href="{% url 'mentorship_action' session.id 'complete' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-check"></i> Mark Complete
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">
+          {% if user.user_type == 'student' %}
+            You don't have any active mentorship sessions.
+            <a href="{% url 'alumni_list' %}">Find a mentor</a> to get started!
+          {% else %}
+            You don't have any active mentees. Wait for students to request mentorship or
+            <a href="{% url 'create_group_session' %}">create a group session</a>.
+          {% endif %}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Upcoming Group Sessions</h5>
+      </div>
+      <div class="card-body">
+        {% if group_sessions %}
+        <div class="list-group">
+          {% for session in group_sessions %}
+          <div class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+              <h5 class="mb-1">{{ session.title }}</h5>
+              <small class="text-muted">{{ session.date_time|date:"F j, Y, g:i a" }}</small>
+            </div>
+            <p class="mb-1">{{ session.description|truncatechars:100 }}</p>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+              <small>
+                {% if user.user_type == 'student' and session.mentor %}
+                  Host:
+                  <a href="{% url 'user_detail' session.mentor.username %}">
+                    {{ session.mentor.get_full_name }}
+                  </a>
+                {% else %}
+                  Participants: {{ session.participants.count }} / {{ session.max_participants }}
+                {% endif %}
+              </small>
+              {% if user.user_type == 'student' %}
+                {% if user in session.participants.all %}
+                  <a href="{% url 'leave_group_session' session.id %}" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-sign-out-alt"></i> Leave Session
+                  </a>
+                {% else %}
+                  <a href="{% url 'join_group_session' session.id %}" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-sign-in-alt"></i> Join Session
+                  </a>
+                {% endif %}
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">
+          {% if user.user_type == 'student' %}
+            You haven't joined any group sessions yet.
+            <a href="{% url 'group_sessions' %}">Browse available sessions</a>.
+          {% else %}
+            You haven't created any group sessions yet.
+            <a href="{% url 'create_group_session' %}">Create a group session</a> to mentor multiple students at once.
+          {% endif %}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Quick Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          {% if user.user_type == 'student' %}
+          <a href="{% url 'alumni_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-search"></i> Find a Mentor
+          </a>
+          <a href="{% url 'group_sessions' %}" class="btn btn-outline-primary">
+            <i class="fas fa-users"></i> Browse Group Sessions
+          </a>
+          {% else %}
+          <a href="{% url 'create_group_session' %}" class="btn btn-outline-primary">
+            <i class="fas fa-plus"></i> Create Group Session
+          </a>
+          <a href="{% url 'student_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-search"></i> Browse Students
+          </a>
+          {% endif %}
+          <a href="{% url 'create_topic' %}" class="btn btn-outline-primary">
+            <i class="fas fa-clipboard-list"></i> Start Discussion
+          </a>
+          <a href="{% url 'chat_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-comments"></i> Messages
+          </a>
+          <a href="{% url 'call_home' %}" class="btn btn-outline-primary">
+            <i class="fas fa-video"></i> Calls
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Recent Discussions</h5>
+      </div>
+      <div class="card-body">
+        <div class="list-group">
+          {% for topic in recent_topics|slice:":5" %}
+          <a href="{% url 'topic_detail' topic.id %}" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+              <h6 class="mb-1">{{ topic.title }}</h6>
+              <small>{{ topic.created_at|timesince }} ago</small>
+            </div>
+            <small>by {{ topic.created_by.get_full_name }}</small>
+          </a>
+          {% empty %}
+          <p class="text-muted">
+            No recent discussions. <a href="{% url 'create_topic' %}">Start one</a>!
+          </p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
