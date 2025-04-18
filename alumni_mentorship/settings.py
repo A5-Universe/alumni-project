@@ -17,7 +17,7 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [                #change url for every run time
-    "https://4a3b-2401-4900-3ea7-c11a-cd9e-1035-c7c0-ae4b.ngrok-free.app"
+    "https://1df0-2401-4900-3ea7-c11a-7e0a-8aeb-39d1-6a48.ngrok-free.app"
 ]
 # Application definition
 

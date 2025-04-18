@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib import messages
+from django.http import JsonResponse
+from django.utils import timezone
 from .models import ChatRoom, Message
 from users.models import CustomUser
 
@@ -33,7 +35,10 @@ def chat_list(request):
         })
     
     # Sort by latest message timestamp
-    rooms_with_details.sort(key=lambda x: x['latest_message'].timestamp if x['latest_message'] else None, reverse=True)
+    rooms_with_details.sort(
+        key=lambda x: x['latest_message'].timestamp if x['latest_message'] else timezone.now(),
+        reverse=True
+    )
     
     return render(request, 'chat/chat_list.html', {'rooms': rooms_with_details})
 
@@ -50,7 +55,7 @@ def chat_room(request, room_id):
     room.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
     
     # Get all messages in the room
-    chat_messages = room.messages.order_by('timestamp')
+    chat_messages = room.messages.all()
     
     # Get other participants
     other_participants = room.participants.exclude(id=request.user.id)
@@ -112,3 +117,37 @@ def create_group_chat(request):
     return render(request, 'chat/create_group_chat.html', {
         'potential_participants': potential_participants
     })
+
+@login_required
+def send_message(request, room_id):
+    """API endpoint for sending messages without WebSockets (fallback)"""
+    if request.method == 'POST':
+        try:
+            room = get_object_or_404(ChatRoom, id=room_id)
+            content = request.POST.get('message')
+            
+            if not content:
+                return JsonResponse({'status': 'error', 'message': 'Message content is required'})
+            
+            # Create message
+            message = Message.objects.create(
+                room=room,
+                sender=request.user,
+                content=content,
+                timestamp=timezone.now()
+            )
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': {
+                    'id': message.id,
+                    'content': message.content,
+                    'sender_id': message.sender.id,
+                    'sender_name': message.sender.username,
+                    'timestamp': message.timestamp.isoformat()
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)

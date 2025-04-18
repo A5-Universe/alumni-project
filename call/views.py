@@ -9,6 +9,8 @@ import json
 from agora_token_builder import RtcTokenBuilder
 from .models import Call
 from users.models import CustomUser
+from django.db import models
+from django.conf import settings
 
 @login_required
 def call_home(request):
